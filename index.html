@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none"
     />
-    <title>Cyber Chess</title>
+    <title>Cyber Chess | Checkmate Edition</title>
     <link rel="icon" href="./Capture.PNG" />
     <style>
       :root {
@@ -15,15 +15,11 @@
         --red-piece: #ff4444;
         --blue-piece: #4444ff;
         --accent: #00ff41;
-        /* Dynamic board size: 85% of the smallest screen dimension */
-        --board-size: Math.min(85vw, 70vh);
       }
-
       * {
         box-sizing: border-box;
         touch-action: manipulation;
       }
-
       body {
         background: #0a0b10;
         color: white;
@@ -33,13 +29,10 @@
         align-items: center;
         min-height: 100vh;
         font-family: "Segoe UI", sans-serif;
-        overflow-x: hidden;
         padding: 10px;
       }
-
       #game-container {
         display: flex;
-        flex-direction: row;
         gap: 20px;
         align-items: center;
         justify-content: center;
@@ -47,26 +40,17 @@
         max-width: 1200px;
       }
 
-      /* Mobile Layout: Stack everything vertically */
       @media (max-width: 768px) {
         #game-container {
           flex-direction: column;
-          gap: 10px;
         }
         .graveyard {
           width: 100% !important;
           flex-direction: row !important;
-          justify-content: space-around;
-        }
-        .pieces {
-          grid-template-columns: repeat(8, 1fr) !important;
         }
         #chessboard {
           width: 90vw !important;
           height: 90vw !important;
-        }
-        .square {
-          font-size: 8vw !important;
         }
       }
 
@@ -78,20 +62,16 @@
         width: 140px;
         display: flex;
         flex-direction: column;
-        align-items: center;
       }
-
       .timer {
         font-size: 1.2rem;
         font-weight: bold;
-        width: 100%;
         text-align: center;
         padding: 5px;
         border-radius: 5px;
         background: #000;
         margin-bottom: 5px;
       }
-
       #blue-timer {
         color: var(--blue-piece);
         border: 1px solid var(--blue-piece);
@@ -100,22 +80,11 @@
         color: var(--red-piece);
         border: 1px solid var(--red-piece);
       }
-
       .pieces {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
         font-size: 24px;
         min-height: 40px;
-      }
-
-      #main-board-area {
-        text-align: center;
-        flex-grow: 1;
-      }
-      #status {
-        font-size: 1.2rem;
-        margin: 10px 0;
-        color: var(--accent);
       }
 
       #chessboard {
@@ -123,73 +92,69 @@
         grid-template-columns: repeat(8, 1fr);
         grid-template-rows: repeat(8, 1fr);
         width: 70vh;
-        height: 70vh; /* Scaled for desktop height */
+        height: 70vh;
         max-width: 600px;
         max-height: 600px;
         border: 6px solid #222;
         position: relative;
-        background: #222;
       }
-
       .square {
         width: 100%;
         height: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 45px;
+        font-size: 40px;
         cursor: pointer;
         position: relative;
       }
-
       .white {
         background-color: var(--light-sq);
       }
       .black {
         background-color: var(--dark-sq);
       }
-
       .selected {
         background-color: rgba(255, 255, 255, 0.3) !important;
       }
       .hint::after {
         content: "";
-        width: 25%;
-        height: 25%;
+        width: 20%;
+        height: 20%;
         background: var(--accent);
         border-radius: 50%;
         position: absolute;
-        opacity: 0.6;
+        opacity: 0.7;
       }
-
       .red-p {
         color: var(--red-piece);
-        filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.3));
       }
       .blue-p {
         color: var(--blue-piece);
-        filter: drop-shadow(0 0 5px rgba(0, 0, 255, 0.3));
       }
       .check-alert {
         background: radial-gradient(
           circle,
           #ff0000aa,
-          transparent 70%
+          transparent 80%
         ) !important;
       }
 
+      /* MODALS */
+      #end-screen,
       #promotion-overlay {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.9);
         display: none;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 100;
+        text-align: center;
       }
       .promo-options {
         display: flex;
@@ -199,19 +164,15 @@
         border-radius: 10px;
         border: 2px solid var(--accent);
       }
-      .promo-btn {
-        font-size: 40px;
-        cursor: pointer;
-        padding: 5px;
-      }
-
-      button {
-        background: #333;
-        color: white;
-        border: 1px solid #555;
-        padding: 8px 15px;
+      .btn {
+        background: var(--accent);
+        color: black;
+        border: none;
+        padding: 10px 20px;
         border-radius: 5px;
+        font-weight: bold;
         cursor: pointer;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -222,16 +183,19 @@
         <div id="cap-red" class="pieces"></div>
       </div>
 
-      <div id="main-board-area">
+      <div id="main-area" style="text-align: center">
         <h2 id="status">BLUE'S TURN</h2>
         <div id="chessboard">
+          <div id="end-screen">
+            <h1 id="winner-text">CHECKMATE</h1>
+            <p id="sub-text">Blue Wins the Match</p>
+            <button class="btn" onclick="location.reload()">REMATCH</button>
+          </div>
           <div id="promotion-overlay">
-            <p>Promote!</p>
+            <h3>Promote Pawn</h3>
             <div class="promo-options" id="promo-list"></div>
           </div>
         </div>
-        <br />
-        <button onclick="location.reload()">Reset Game</button>
       </div>
 
       <div class="graveyard">
@@ -241,10 +205,9 @@
     </div>
 
     <script>
-      // ... ALL JAVASCRIPT LOGIC FROM PREVIOUS VERSION REMAINS THE SAME ...
-      // [Ensure the render() function uses the same piece detection logic]
       const boardEl = document.getElementById("chessboard");
       const statusEl = document.getElementById("status");
+      const endScreen = document.getElementById("end-screen");
       const promoOverlay = document.getElementById("promotion-overlay");
 
       let board = [
@@ -266,13 +229,10 @@
         timerId = null;
       let capRed = [],
         capBlue = [];
-      let pendingPromotion = null;
 
       function getTeam(p) {
         if (!p) return null;
-        if ("♜♞♝♛♚♟".includes(p)) return "red";
-        if ("♖♘♗♕♔♙".includes(p)) return "blue";
-        return null;
+        return "♜♞♝♛♚♟".includes(p) ? "red" : "blue";
       }
 
       function isPathClear(sR, sC, eR, eC) {
@@ -336,14 +296,39 @@
             if (board[r][c] === kIcon) kPos = { r, c };
         if (!kPos) return false;
         for (let r = 0; r < 8; r++)
-          for (let c = 0; c < 8; c++)
-            if (board[r][c] && getTeam(board[r][c]) !== color)
-              if (canMove(r, c, kPos.r, kPos.c, board[r][c], true)) return true;
+          for (let c = 0; c < 8; c++) {
+            let p = board[r][c];
+            if (p && getTeam(p) !== color)
+              if (canMove(r, c, kPos.r, kPos.c, p, true)) return true;
+          }
         return false;
       }
 
+      function isCheckmate(color) {
+        if (!inCheck(color)) return false;
+        for (let r = 0; r < 8; r++)
+          for (let c = 0; c < 8; c++) {
+            if (getTeam(board[r][c]) === color) {
+              for (let tr = 0; tr < 8; tr++)
+                for (let tc = 0; tc < 8; tc++) {
+                  if (canMove(r, c, tr, tc, board[r][c])) {
+                    let tmp = board[tr][tc],
+                      p = board[r][c];
+                    board[tr][tc] = p;
+                    board[r][c] = "";
+                    let safe = !inCheck(color);
+                    board[r][c] = p;
+                    board[tr][tc] = tmp;
+                    if (safe) return false;
+                  }
+                }
+            }
+          }
+        return true;
+      }
+
       function handleSquareClick(r, c) {
-        if (isOver || pendingPromotion) return;
+        if (isOver) return;
         if (!timerId) startTimer();
 
         if (selected) {
@@ -357,15 +342,17 @@
             if (inCheck(turn)) {
               board[sR][sC] = p;
               board[r][c] = target;
-              alert("Check!");
+              alert("Illegal Move: King is in Check!");
             } else {
               if (target) {
                 turn === "blue" ? capBlue.push(target) : capRed.push(target);
                 updateGrave();
               }
-              if ((p === "♙" && r === 0) || (p === "♟" && r === 7))
+              if ((p === "♙" && r === 0) || (p === "♟" && r === 7)) {
                 showPromo(r, c, turn);
-              else nextTurn();
+              } else {
+                finishTurn();
+              }
             }
           }
           selected = null;
@@ -381,29 +368,24 @@
         }
       }
 
-      function showPromo(r, c, color) {
-        pendingPromotion = { r, c, color };
-        promoOverlay.style.display = "flex";
-        const pcs =
-          color === "blue" ? ["♕", "♖", "♗", "♘"] : ["♛", "♜", "♝", "♞"];
-        document.getElementById("promo-list").innerHTML = pcs
-          .map(
-            (p) => `<div class="promo-btn" onclick="doPromo('${p}')">${p}</div>`
-          )
-          .join("");
-      }
-
-      function doPromo(p) {
-        board[pendingPromotion.r][pendingPromotion.c] = p;
-        promoOverlay.style.display = "none";
-        pendingPromotion = null;
-        nextTurn();
-        render();
-      }
-
-      function nextTurn() {
+      function finishTurn() {
         turn = turn === "blue" ? "red" : "blue";
-        statusEl.innerText = turn.toUpperCase() + "'S TURN";
+        if (isCheckmate(turn)) {
+          triggerEndGame(
+            "CHECKMATE",
+            (turn === "red" ? "Blue" : "Red") + " Wins!"
+          );
+        } else {
+          statusEl.innerText = turn.toUpperCase() + "'S TURN";
+        }
+      }
+
+      function triggerEndGame(title, sub) {
+        isOver = true;
+        clearInterval(timerId);
+        endScreen.style.display = "flex";
+        document.getElementById("winner-text").innerText = title;
+        document.getElementById("sub-text").innerText = sub;
       }
 
       function startTimer() {
@@ -411,11 +393,11 @@
           if (turn === "blue") {
             bTime--;
             updateClock("blue", bTime);
-            if (bTime <= 0) end("RED ON TIME");
+            if (bTime <= 0) triggerEndGame("TIME OUT", "Red Wins!");
           } else {
             rTime--;
             updateClock("red", rTime);
-            if (rTime <= 0) end("BLUE ON TIME");
+            if (rTime <= 0) triggerEndGame("TIME OUT", "Blue Wins!");
           }
         }, 1000);
       }
@@ -437,6 +419,25 @@
           .join("");
       }
 
+      function showPromo(r, c, color) {
+        promoOverlay.style.display = "flex";
+        const pcs =
+          color === "blue" ? ["♕", "♖", "♗", "♘"] : ["♛", "♜", "♝", "♞"];
+        document.getElementById("promo-list").innerHTML = pcs
+          .map(
+            (p) =>
+              `<div class="square" style="font-size:40px" onclick="doPromo('${p}', ${r}, ${c})">${p}</div>`
+          )
+          .join("");
+      }
+
+      function doPromo(p, r, c) {
+        board[r][c] = p;
+        promoOverlay.style.display = "none";
+        finishTurn();
+        render();
+      }
+
       function render() {
         boardEl.innerHTML = "";
         let check = inCheck(turn);
@@ -452,8 +453,7 @@
             sq.onclick = () => handleSquareClick(r, c);
             boardEl.appendChild(sq);
           }
-        // Promotion overlay must stay inside boardEl or be separate.
-        // Re-adding it because boardEl.innerHTML = '' clears it.
+        boardEl.appendChild(endScreen);
         boardEl.appendChild(promoOverlay);
       }
       render();
