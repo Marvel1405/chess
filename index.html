@@ -4,118 +4,84 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Cyber Chess | Checkmate Edition</title>
+    <title>Cyber Chess</title>
     <link rel="icon" href="./Capture.PNG" />
     <style>
       :root {
         --dark-sq: #161b22;
         --light-sq: #30363d;
-        --red-piece: #ff4444;
-        --blue-piece: #4444ff;
+        --red: #ff4444;
+        --blue: #4444ff;
         --accent: #00ff41;
+        --bsz: clamp(280px, 85vmin, 600px);
       }
+
       * {
         box-sizing: border-box;
         touch-action: manipulation;
-      }
-      body {
-        background: #0a0b10;
-        color: white;
         margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #0d1117;
+        color: white;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        font-family: "Segoe UI", sans-serif;
-        padding: 10px;
-      }
-      #game-container {
-        display: flex;
-        gap: 20px;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        max-width: 1200px;
+        font-family: "Segoe UI", sans-serif;
+        overflow: hidden;
       }
 
-      @media (max-width: 768px) {
-        #game-container {
-          flex-direction: column;
-        }
-        .graveyard {
-          width: 100% !important;
-          flex-direction: row !important;
-        }
-        #chessboard {
-          width: 90vw !important;
-          height: 90vw !important;
-        }
-      }
-
-      .graveyard {
-        background: var(--dark-sq);
-        border: 2px solid var(--light-sq);
-        padding: 10px;
-        border-radius: 12px;
-        width: 140px;
+      .ui-bar {
+        width: var(--bsz);
         display: flex;
-        flex-direction: column;
-      }
-      .timer {
-        font-size: 1.2rem;
-        font-weight: bold;
-        text-align: center;
-        padding: 5px;
-        border-radius: 5px;
-        background: #000;
-        margin-bottom: 5px;
-      }
-      #blue-timer {
-        color: var(--blue-piece);
-        border: 1px solid var(--blue-piece);
-      }
-      #red-timer {
-        color: var(--red-piece);
-        border: 1px solid var(--red-piece);
-      }
-      .pieces {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        font-size: 24px;
-        min-height: 40px;
+        justify-content: space-between;
+        padding: 10px;
+        background: #1c2128;
+        border: 1px solid #333;
       }
 
-      #chessboard {
+      #board {
         display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        grid-template-rows: repeat(8, 1fr);
-        width: 70vh;
-        height: 70vh;
-        max-width: 600px;
-        max-height: 600px;
-        border: 6px solid #222;
+        grid-template-columns: repeat(8, 12.5%);
+        grid-template-rows: repeat(8, 12.5%);
+        width: var(--bsz);
+        height: var(--bsz);
+        border: 4px solid #444;
         position: relative;
+        background: #222;
       }
-      .square {
+
+      .sq {
         width: 100%;
         height: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 40px;
+        font-size: calc(var(--bsz) / 10);
         cursor: pointer;
         position: relative;
       }
-      .white {
-        background-color: var(--light-sq);
+
+      .w {
+        background: var(--light-sq);
       }
-      .black {
-        background-color: var(--dark-sq);
+      .b {
+        background: var(--dark-sq);
       }
-      .selected {
-        background-color: rgba(255, 255, 255, 0.3) !important;
+      .red-p {
+        color: var(--red);
+      }
+      .blue-p {
+        color: var(--blue);
+      }
+      .sel {
+        background: rgba(0, 255, 65, 0.3) !important;
       }
       .hint::after {
         content: "";
@@ -123,202 +89,196 @@
         height: 20%;
         background: var(--accent);
         border-radius: 50%;
-        position: absolute;
-        opacity: 0.7;
-      }
-      .red-p {
-        color: var(--red-piece);
-      }
-      .blue-p {
-        color: var(--blue-piece);
-      }
-      .check-alert {
-        background: radial-gradient(
-          circle,
-          #ff0000aa,
-          transparent 80%
-        ) !important;
+        opacity: 0.5;
       }
 
-      /* MODALS */
-      #end-screen,
-      #promotion-overlay {
+      /* Overlays */
+      #overlay,
+      #promo-overlay {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
+        inset: 0;
+        background: rgba(0, 0, 0, 0.92);
         display: none;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 100;
-        text-align: center;
       }
-      .promo-options {
+
+      .promo-box {
         display: flex;
-        gap: 10px;
+        gap: 15px;
         background: #222;
-        padding: 15px;
-        border-radius: 10px;
+        padding: 20px;
         border: 2px solid var(--accent);
+        border-radius: 10px;
       }
+
+      .promo-choice {
+        font-size: 3rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .promo-choice:hover {
+        transform: scale(1.2);
+      }
+
       .btn {
-        background: var(--accent);
-        color: black;
-        border: none;
         padding: 10px 20px;
-        border-radius: 5px;
+        background: var(--accent);
+        border: none;
         font-weight: bold;
         cursor: pointer;
-        margin-top: 10px;
+        margin-top: 15px;
+      }
+      .timer {
+        font-family: monospace;
+        font-size: 1.2rem;
       }
     </style>
   </head>
   <body>
-    <div id="game-container">
-      <div class="graveyard">
-        <div id="red-timer" class="timer">10:00</div>
-        <div id="cap-red" class="pieces"></div>
-      </div>
+    <div class="ui-bar" style="border-radius: 8px 8px 0 0">
+      <div id="t-red" class="timer" style="color: var(--red)">10:00</div>
+      <div id="cap-red"></div>
+    </div>
 
-      <div id="main-area" style="text-align: center">
-        <h2 id="status">BLUE'S TURN</h2>
-        <div id="chessboard">
-          <div id="end-screen">
-            <h1 id="winner-text">CHECKMATE</h1>
-            <p id="sub-text">Blue Wins the Match</p>
-            <button class="btn" onclick="location.reload()">REMATCH</button>
-          </div>
-          <div id="promotion-overlay">
-            <h3>Promote Pawn</h3>
-            <div class="promo-options" id="promo-list"></div>
-          </div>
-        </div>
-      </div>
+    <p id="status" style="color: var(--accent); margin: 5px; font-weight: bold">
+      BLUE'S TURN
+    </p>
 
-      <div class="graveyard">
-        <div id="blue-timer" class="timer">10:00</div>
-        <div id="cap-blue" class="pieces"></div>
+    <div id="board">
+      <div id="overlay">
+        <h1 id="win-msg">CHECKMATE</h1>
+        <button class="btn" onclick="location.reload()">REMATCH</button>
+      </div>
+      <div id="promo-overlay">
+        <h3 style="margin-bottom: 15px">PROMOTE PAWN</h3>
+        <div class="promo-box" id="promo-list"></div>
       </div>
     </div>
 
+    <div class="ui-bar" style="border-radius: 0 0 8px 8px">
+      <div id="t-blue" class="timer" style="color: var(--blue)">10:00</div>
+      <div id="cap-blue"></div>
+    </div>
+
     <script>
-      const boardEl = document.getElementById("chessboard");
-      const statusEl = document.getElementById("status");
-      const endScreen = document.getElementById("end-screen");
-      const promoOverlay = document.getElementById("promotion-overlay");
+      const audio = new (window.AudioContext || window.webkitAudioContext)();
+      function playSfx(f, d) {
+        const o = audio.createOscillator(),
+          g = audio.createGain();
+        o.frequency.value = f;
+        g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + d);
+        o.connect(g);
+        g.connect(audio.destination);
+        o.start();
+        o.stop(audio.currentTime + d);
+      }
 
       let board = [
         ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
-        ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
-        ["", "", "", "", "", "", "", ""],
-        ["", "", "", "", "", "", "", ""],
-        ["", "", "", "", "", "", "", ""],
-        ["", "", "", "", "", "", "", ""],
         ["♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
         ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
       ];
 
-      let selected = null,
-        turn = "blue",
-        isOver = false;
-      let bTime = 600,
-        rTime = 600,
-        timerId = null;
-      let capRed = [],
-        capBlue = [];
+      let turn = "blue",
+        sel = null,
+        isOver = false,
+        timer = null,
+        time = { blue: 600, red: 600 };
+      let pendingPromo = null;
 
-      function getTeam(p) {
+      const getT = (p) => {
         if (!p) return null;
-        return "♜♞♝♛♚♟".includes(p) ? "red" : "blue";
-      }
+        return "♖♘♗♕♔♟".includes(p) ? "blue" : "red";
+      };
 
-      function isPathClear(sR, sC, eR, eC) {
-        let dR = Math.sign(eR - sR),
-          dC = Math.sign(eC - sC);
-        let r = sR + dR,
-          c = sC + dC;
-        while (r !== eR || c !== eC) {
-          if (board[r][c] !== "") return false;
-          r += dR;
-          c += dC;
-        }
-        return true;
-      }
+      function canM(sr, sc, er, ec, p, ignoreK = false) {
+        if (sr === er && sc === ec) return false;
+        let t = board[er][ec],
+          dr = er - sr,
+          dc = ec - sc,
+          ar = Math.abs(dr),
+          ac = Math.abs(dc);
+        if (!ignoreK && getT(t) === getT(p)) return false;
 
-      function canMove(sR, sC, eR, eC, p, ignoreCheck = false) {
-        if (sR === eR && sC === eC) return false;
-        let target = board[eR][eC];
-        if (!ignoreCheck && getTeam(target) === getTeam(p)) return false;
-        let dR = eR - sR,
-          dC = eC - sC,
-          absR = Math.abs(dR),
-          absC = Math.abs(dC);
-
-        if (p === "♙") {
-          // Blue Up
-          if (dC === 0 && target === "") {
-            if (dR === -1) return true;
-            if (sR === 6 && dR === -2 && board[5][sC] === "") return true;
-          }
-          return absC === 1 && dR === -1 && getTeam(target) === "red";
-        }
         if (p === "♟") {
-          // Red Down
-          if (dC === 0 && target === "") {
-            if (dR === 1) return true;
-            if (sR === 1 && dR === 2 && board[2][sC] === "") return true;
+          // Blue Up
+          if (dc === 0 && t === "") {
+            if (dr === -1) return true;
+            if (sr === 6 && dr === -2 && board[5][sc] === "") return true;
           }
-          return absC === 1 && dR === 1 && getTeam(target) === "blue";
+          return ac === 1 && dr === -1 && getT(t) === "red";
         }
-        if ("♖♜".includes(p))
-          return (dR === 0 || dC === 0) && isPathClear(sR, sC, eR, eC);
-        if ("♗♝".includes(p))
-          return absR === absC && isPathClear(sR, sC, eR, eC);
-        if ("♘♞".includes(p))
-          return (absR === 2 && absC === 1) || (absR === 1 && absC === 2);
-        if ("♕♛".includes(p))
-          return (
-            (dR === 0 || dC === 0 || absR === absC) &&
-            isPathClear(sR, sC, eR, eC)
-          );
-        if ("♔♚".includes(p)) return absR <= 1 && absC <= 1;
-        return false;
-      }
-
-      function inCheck(color) {
-        let kPos,
-          kIcon = color === "blue" ? "♔" : "♚";
-        for (let r = 0; r < 8; r++)
-          for (let c = 0; c < 8; c++)
-            if (board[r][c] === kIcon) kPos = { r, c };
-        if (!kPos) return false;
-        for (let r = 0; r < 8; r++)
-          for (let c = 0; c < 8; c++) {
-            let p = board[r][c];
-            if (p && getTeam(p) !== color)
-              if (canMove(r, c, kPos.r, kPos.c, p, true)) return true;
+        if (p === "♙") {
+          // Red Down
+          if (dc === 0 && t === "") {
+            if (dr === 1) return true;
+            if (sr === 1 && dr === 2 && board[2][sc] === "") return true;
           }
+          return ac === 1 && dr === 1 && getT(t) === "blue";
+        }
+
+        const path = () => {
+          let rs = Math.sign(dr),
+            cs = Math.sign(dc);
+          let r = sr + rs,
+            c = sc + cs;
+          while (r !== er || c !== ec) {
+            if (board[r][c]) return false;
+            r += rs;
+            c += cs;
+          }
+          return true;
+        };
+
+        if ("♖♜".includes(p)) return (dr === 0 || dc === 0) && path();
+        if ("♗♝".includes(p)) return ar === ac && path();
+        if ("♘♞".includes(p))
+          return (ar === 2 && ac === 1) || (ar === 1 && ac === 2);
+        if ("♕♛".includes(p))
+          return (dr === 0 || dc === 0 || ar === ac) && path();
+        if ("♔♚".includes(p)) return ar <= 1 && ac <= 1;
         return false;
       }
 
-      function isCheckmate(color) {
-        if (!inCheck(color)) return false;
+      function inCheck(col) {
+        let k;
+        const icon = col === "blue" ? "♔" : "♚";
+        board.forEach((r, i) =>
+          r.forEach((p, j) => {
+            if (p === icon) k = [i, j];
+          })
+        );
+        if (!k) return false;
+        return board.some((r, i) =>
+          r.some(
+            (p, j) => p && getT(p) !== col && canM(i, j, k[0], k[1], p, true)
+          )
+        );
+      }
+
+      function isMate(col) {
+        if (!inCheck(col)) return false;
         for (let r = 0; r < 8; r++)
           for (let c = 0; c < 8; c++) {
-            if (getTeam(board[r][c]) === color) {
-              for (let tr = 0; tr < 8; tr++)
-                for (let tc = 0; tc < 8; tc++) {
-                  if (canMove(r, c, tr, tc, board[r][c])) {
-                    let tmp = board[tr][tc],
+            if (getT(board[r][c]) === col) {
+              for (let nr = 0; nr < 8; nr++)
+                for (let nc = 0; nc < 8; nc++) {
+                  if (canM(r, c, nr, nc, board[r][c])) {
+                    let tmp = board[nr][nc],
                       p = board[r][c];
-                    board[tr][tc] = p;
+                    board[nr][nc] = p;
                     board[r][c] = "";
-                    let safe = !inCheck(color);
+                    let safe = !inCheck(col);
                     board[r][c] = p;
-                    board[tr][tc] = tmp;
+                    board[nr][nc] = tmp;
                     if (safe) return false;
                   }
                 }
@@ -327,134 +287,108 @@
         return true;
       }
 
-      function handleSquareClick(r, c) {
-        if (isOver) return;
-        if (!timerId) startTimer();
+      function handle(r, c) {
+        if (isOver || pendingPromo) return;
+        if (!timer) {
+          timer = setInterval(() => {
+            time[turn]--;
+            let m = Math.floor(time[turn] / 60),
+              s = time[turn] % 60;
+            document.getElementById("t-" + turn).innerText = `${m}:${
+              s < 10 ? "0" : ""
+            }${s}`;
+            if (time[turn] <= 0) endGame("TIME OUT!");
+          }, 1000);
+        }
 
-        if (selected) {
-          let sR = selected.r,
-            sC = selected.c,
-            p = board[sR][sC];
-          if (canMove(sR, sC, r, c, p)) {
-            let target = board[r][c];
+        if (sel) {
+          const p = board[sel.r][sel.c];
+          if (canM(sel.r, sel.c, r, c, p)) {
+            const target = board[r][c];
             board[r][c] = p;
-            board[sR][sC] = "";
+            board[sel.r][sel.c] = "";
+
             if (inCheck(turn)) {
-              board[sR][sC] = p;
+              board[sel.r][sel.c] = p;
               board[r][c] = target;
-              alert("Illegal Move: King is in Check!");
             } else {
-              if (target) {
-                turn === "blue" ? capBlue.push(target) : capRed.push(target);
-                updateGrave();
-              }
-              if ((p === "♙" && r === 0) || (p === "♟" && r === 7)) {
-                showPromo(r, c, turn);
+              target ? playSfx(300, 0.2) : playSfx(600, 0.1);
+              if (target)
+                document.getElementById("cap-" + turn).innerHTML += target;
+
+              // Check Promotion
+              if ((p === "♟" && r === 0) || (p === "♙" && r === 7)) {
+                pendingPromo = { r, c, team: turn };
+                showPromoUI();
               } else {
-                finishTurn();
+                nextTurn();
               }
             }
           }
-          selected = null;
+          sel = null;
           render();
-        } else if (getTeam(board[r][c]) === turn) {
-          selected = { r, c };
+        } else if (getT(board[r][c]) === turn) {
+          sel = { r, c };
           render();
-          let sqs = document.querySelectorAll(".square");
-          sqs[r * 8 + c].classList.add("selected");
-          for (let i = 0; i < 64; i++)
-            if (canMove(r, c, Math.floor(i / 8), i % 8, board[r][c]))
-              sqs[i].classList.add("hint");
         }
       }
 
-      function finishTurn() {
-        turn = turn === "blue" ? "red" : "blue";
-        if (isCheckmate(turn)) {
-          triggerEndGame(
-            "CHECKMATE",
-            (turn === "red" ? "Blue" : "Red") + " Wins!"
-          );
-        } else {
-          statusEl.innerText = turn.toUpperCase() + "'S TURN";
-        }
-      }
-
-      function triggerEndGame(title, sub) {
-        isOver = true;
-        clearInterval(timerId);
-        endScreen.style.display = "flex";
-        document.getElementById("winner-text").innerText = title;
-        document.getElementById("sub-text").innerText = sub;
-      }
-
-      function startTimer() {
-        timerId = setInterval(() => {
-          if (turn === "blue") {
-            bTime--;
-            updateClock("blue", bTime);
-            if (bTime <= 0) triggerEndGame("TIME OUT", "Red Wins!");
-          } else {
-            rTime--;
-            updateClock("red", rTime);
-            if (rTime <= 0) triggerEndGame("TIME OUT", "Blue Wins!");
-          }
-        }, 1000);
-      }
-
-      function updateClock(c, t) {
-        let m = Math.floor(t / 60),
-          s = t % 60;
-        document.getElementById(c + "-timer").innerText = `${m}:${
-          s < 10 ? "0" : ""
-        }${s}`;
-      }
-
-      function updateGrave() {
-        document.getElementById("cap-red").innerHTML = capRed
-          .map((p) => `<span class="blue-p">${p}</span>`)
-          .join("");
-        document.getElementById("cap-blue").innerHTML = capBlue
-          .map((p) => `<span class="red-p">${p}</span>`)
-          .join("");
-      }
-
-      function showPromo(r, c, color) {
-        promoOverlay.style.display = "flex";
-        const pcs =
-          color === "blue" ? ["♕", "♖", "♗", "♘"] : ["♛", "♜", "♝", "♞"];
-        document.getElementById("promo-list").innerHTML = pcs
+      function showPromoUI() {
+        const overlay = document.getElementById("promo-overlay");
+        const list = document.getElementById("promo-list");
+        overlay.style.display = "flex";
+        const pieces =
+          pendingPromo.team === "blue"
+            ? ["♕", "♖", "♗", "♘"]
+            : ["♛", "♜", "♝", "♞"];
+        list.innerHTML = pieces
           .map(
             (p) =>
-              `<div class="square" style="font-size:40px" onclick="doPromo('${p}', ${r}, ${c})">${p}</div>`
+              `<div class="promo-choice blue-p" onclick="promoteTo('${p}')">${p}</div>`
           )
           .join("");
       }
 
-      function doPromo(p, r, c) {
-        board[r][c] = p;
-        promoOverlay.style.display = "none";
-        finishTurn();
+      function promoteTo(piece) {
+        board[pendingPromo.r][pendingPromo.c] = piece;
+        document.getElementById("promo-overlay").style.display = "none";
+        pendingPromo = null;
+        nextTurn();
         render();
       }
 
+      function nextTurn() {
+        turn = turn === "blue" ? "red" : "blue";
+        document.getElementById("status").innerText =
+          turn.toUpperCase() + "'S TURN";
+        if (isMate(turn)) endGame("CHECKMATE!");
+      }
+
+      function endGame(m) {
+        clearInterval(timer);
+        isOver = true;
+        document.getElementById("overlay").style.display = "flex";
+        document.getElementById("win-msg").innerText = m;
+      }
+
       function render() {
-        boardEl.innerHTML = "";
-        let check = inCheck(turn);
-        for (let r = 0; r < 8; r++)
-          for (let c = 0; c < 8; c++) {
-            let sq = document.createElement("div");
-            sq.className = `square ${(r + c) % 2 === 0 ? "white" : "black"}`;
-            let p = board[r][c];
-            sq.innerText = p;
-            if (p) sq.classList.add(getTeam(p) + "-p");
-            if (check && "♔♚".includes(p) && getTeam(p) === turn)
-              sq.classList.add("check-alert");
-            sq.onclick = () => handleSquareClick(r, c);
-            boardEl.appendChild(sq);
-          }
-        boardEl.appendChild(endScreen);
-        boardEl.appendChild(promoOverlay);
+        const b = document.getElementById("board");
+        b.querySelectorAll(".sq").forEach((s) => s.remove());
+        board.forEach((row, r) =>
+          row.forEach((p, c) => {
+            const s = document.createElement("div");
+            s.className = `sq ${(r + c) % 2 === 0 ? "w" : "b"}`;
+            if (sel && sel.r === r && sel.c === c) s.classList.add("sel");
+            if (sel && canM(sel.r, sel.c, r, c, board[sel.r][sel.c]))
+              s.classList.add("hint");
+            s.innerText = p;
+            if (p) s.classList.add(getT(p) + "-p");
+            s.onclick = () => handle(r, c);
+            b.appendChild(s);
+          })
+        );
+        b.appendChild(document.getElementById("overlay"));
+        b.appendChild(document.getElementById("promo-overlay"));
       }
       render();
     </script>
