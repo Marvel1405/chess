@@ -12,8 +12,8 @@
       :root {
         --dark-sq: #161b22;
         --light-sq: #30363d;
-        --red: red;
-        --blue: #00f22f;
+        --red: #ff4444;
+        --blue: #4444ff;
         --accent: #00ff41;
         --bsz: clamp(280px, 85vmin, 600px);
       }
@@ -144,7 +144,7 @@
     </div>
 
     <p id="status" style="color: var(--accent); margin: 5px; font-weight: bold">
-      GREEN'S TURN
+      BLUE'S TURN
     </p>
 
     <div id="board">
@@ -187,16 +187,16 @@
         ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
       ];
 
-      let turn = "green",
+      let turn = "blue",
         sel = null,
         isOver = false,
         timer = null,
-        time = { blue: 600, white: 600 };
+        time = { blue: 600, red: 600 };
       let pendingPromo = null;
 
       const getT = (p) => {
         if (!p) return null;
-        return "♖♘♗♕♔♟".includes(p) ? "green" : "white";
+        return "♖♘♗♕♔♟".includes(p) ? "blue" : "red";
       };
 
       function canM(sr, sc, er, ec, p, ignoreK = false) {
@@ -214,7 +214,7 @@
             if (dr === -1) return true;
             if (sr === 6 && dr === -2 && board[5][sc] === "") return true;
           }
-          return ac === 1 && dr === -1 && getT(t) === "white";
+          return ac === 1 && dr === -1 && getT(t) === "red";
         }
         if (p === "♙") {
           // Red Down
@@ -222,7 +222,7 @@
             if (dr === 1) return true;
             if (sr === 1 && dr === 2 && board[2][sc] === "") return true;
           }
-          return ac === 1 && dr === 1 && getT(t) === "green";
+          return ac === 1 && dr === 1 && getT(t) === "blue";
         }
 
         const path = () => {
@@ -250,7 +250,7 @@
 
       function inCheck(col) {
         let k;
-        const icon = col === "green" ? "♔" : "♚";
+        const icon = col === "blue" ? "♔" : "♚";
         board.forEach((r, i) =>
           r.forEach((p, j) => {
             if (p === icon) k = [i, j];
@@ -338,7 +338,7 @@
         const list = document.getElementById("promo-list");
         overlay.style.display = "flex";
         const pieces =
-          pendingPromo.team === "green"
+          pendingPromo.team === "blue"
             ? ["♕", "♖", "♗", "♘"]
             : ["♛", "♜", "♝", "♞"];
         list.innerHTML = pieces
@@ -358,7 +358,7 @@
       }
 
       function nextTurn() {
-        turn = turn === "green" ? "white" : "green";
+        turn = turn === "blue" ? "red" : "blue";
         document.getElementById("status").innerText =
           turn.toUpperCase() + "'S TURN";
         if (isMate(turn)) endGame("CHECKMATE!");
