@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none"
+    />
+    <title>Cyber Chess</title>
+    <link rel="icon" href="./Capture.PNG" />
+    <style>
+      :root {
+        --dark-sq: #161b22;
+        --light-sq: #30363d;
+        --red-piece: #ff4444;
+        --blue-piece: #4444ff;
+        --accent: #00ff41;
+        /* Dynamic board size: 85% of the smallest screen dimension */
+        --board-size: Math.min(85vw, 70vh);
+      }
+
+      * {
+        box-sizing: border-box;
+        touch-action: manipulation;
+      }
+
+      body {
+        background: #0a0b10;
+        color: white;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        font-family: "Segoe UI", sans-serif;
+        overflow-x: hidden;
+        padding: 10px;
+      }
+
+      #game-container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      /* Mobile Layout: Stack everything vertically */
+      @media (max-width: 768px) {
+        #game-container {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .graveyard {
+          width: 100% !important;
+          flex-direction: row !important;
+          justify-content: space-around;
+        }
+        .pieces {
+          grid-template-columns: repeat(8, 1fr) !important;
+        }
+        #chessboard {
+          width: 90vw !important;
+          height: 90vw !important;
+        }
+        .square {
+          font-size: 8vw !important;
+        }
+      }
+
+      .graveyard {
+        background: var(--dark-sq);
+        border: 2px solid var(--light-sq);
+        padding: 10px;
+        border-radius: 12px;
+        width: 140px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        width: 100%;
+        text-align: center;
+        padding: 5px;
+        border-radius: 5px;
+        background: #000;
+        margin-bottom: 5px;
+      }
+
+      #blue-timer {
+        color: var(--blue-piece);
+        border: 1px solid var(--blue-piece);
+      }
+      #red-timer {
+        color: var(--red-piece);
+        border: 1px solid var(--red-piece);
+      }
+
+      .pieces {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        font-size: 24px;
+        min-height: 40px;
+      }
+
+      #main-board-area {
+        text-align: center;
+        flex-grow: 1;
+      }
+      #status {
+        font-size: 1.2rem;
+        margin: 10px 0;
+        color: var(--accent);
+      }
+
+      #chessboard {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        width: 70vh;
+        height: 70vh; /* Scaled for desktop height */
+        max-width: 600px;
+        max-height: 600px;
+        border: 6px solid #222;
+        position: relative;
+        background: #222;
+      }
+
+      .square {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 45px;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .white {
+        background-color: var(--light-sq);
+      }
+      .black {
+        background-color: var(--dark-sq);
+      }
+
+      .selected {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+      }
+      .hint::after {
+        content: "";
+        width: 25%;
+        height: 25%;
+        background: var(--accent);
+        border-radius: 50%;
+        position: absolute;
+        opacity: 0.6;
+      }
+
+      .red-p {
+        color: var(--red-piece);
+        filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.3));
+      }
+      .blue-p {
+        color: var(--blue-piece);
+        filter: drop-shadow(0 0 5px rgba(0, 0, 255, 0.3));
+      }
+      .check-alert {
+        background: radial-gradient(
+          circle,
+          #ff0000aa,
+          transparent 70%
+        ) !important;
+      }
+
+      #promotion-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+      .promo-options {
+        display: flex;
+        gap: 10px;
+        background: #222;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid var(--accent);
+      }
+      .promo-btn {
+        font-size: 40px;
+        cursor: pointer;
+        padding: 5px;
+      }
+
+      button {
+        background: #333;
+        color: white;
+        border: 1px solid #555;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <div class="graveyard">
+        <div id="red-timer" class="timer">10:00</div>
+        <div id="cap-red" class="pieces"></div>
+      </div>
+
+      <div id="main-board-area">
+        <h2 id="status">BLUE'S TURN</h2>
+        <div id="chessboard">
+          <div id="promotion-overlay">
+            <p>Promote!</p>
+            <div class="promo-options" id="promo-list"></div>
+          </div>
+        </div>
+        <br />
+        <button onclick="location.reload()">Reset Game</button>
+      </div>
+
+      <div class="graveyard">
+        <div id="blue-timer" class="timer">10:00</div>
+        <div id="cap-blue" class="pieces"></div>
+      </div>
+    </div>
+
+    <script>
+      // ... ALL JAVASCRIPT LOGIC FROM PREVIOUS VERSION REMAINS THE SAME ...
+      // [Ensure the render() function uses the same piece detection logic]
+      const boardEl = document.getElementById("chessboard");
+      const statusEl = document.getElementById("status");
+      const promoOverlay = document.getElementById("promotion-overlay");
+
+      let board = [
+        ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
+        ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", ""],
+        ["♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"],
+        ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"],
+      ];
+
+      let selected = null,
+        turn = "blue",
+        isOver = false;
+      let bTime = 600,
+        rTime = 600,
+        timerId = null;
+      let capRed = [],
+        capBlue = [];
+      let pendingPromotion = null;
+
+      function getTeam(p) {
+        if (!p) return null;
+        if ("♜♞♝♛♚♟".includes(p)) return "red";
+        if ("♖♘♗♕♔♙".includes(p)) return "blue";
+        return null;
+      }
+
+      function isPathClear(sR, sC, eR, eC) {
+        let dR = Math.sign(eR - sR),
+          dC = Math.sign(eC - sC);
+        let r = sR + dR,
+          c = sC + dC;
+        while (r !== eR || c !== eC) {
+          if (board[r][c] !== "") return false;
+          r += dR;
+          c += dC;
+        }
+        return true;
+      }
+
+      function canMove(sR, sC, eR, eC, p, ignoreCheck = false) {
+        if (sR === eR && sC === eC) return false;
+        let target = board[eR][eC];
+        if (!ignoreCheck && getTeam(target) === getTeam(p)) return false;
+        let dR = eR - sR,
+          dC = eC - sC,
+          absR = Math.abs(dR),
+          absC = Math.abs(dC);
+
+        if (p === "♙") {
+          // Blue Up
+          if (dC === 0 && target === "") {
+            if (dR === -1) return true;
+            if (sR === 6 && dR === -2 && board[5][sC] === "") return true;
+          }
+          return absC === 1 && dR === -1 && getTeam(target) === "red";
+        }
+        if (p === "♟") {
+          // Red Down
+          if (dC === 0 && target === "") {
+            if (dR === 1) return true;
+            if (sR === 1 && dR === 2 && board[2][sC] === "") return true;
+          }
+          return absC === 1 && dR === 1 && getTeam(target) === "blue";
+        }
+        if ("♖♜".includes(p))
+          return (dR === 0 || dC === 0) && isPathClear(sR, sC, eR, eC);
+        if ("♗♝".includes(p))
+          return absR === absC && isPathClear(sR, sC, eR, eC);
+        if ("♘♞".includes(p))
+          return (absR === 2 && absC === 1) || (absR === 1 && absC === 2);
+        if ("♕♛".includes(p))
+          return (
+            (dR === 0 || dC === 0 || absR === absC) &&
+            isPathClear(sR, sC, eR, eC)
+          );
+        if ("♔♚".includes(p)) return absR <= 1 && absC <= 1;
+        return false;
+      }
+
+      function inCheck(color) {
+        let kPos,
+          kIcon = color === "blue" ? "♔" : "♚";
+        for (let r = 0; r < 8; r++)
+          for (let c = 0; c < 8; c++)
+            if (board[r][c] === kIcon) kPos = { r, c };
+        if (!kPos) return false;
+        for (let r = 0; r < 8; r++)
+          for (let c = 0; c < 8; c++)
+            if (board[r][c] && getTeam(board[r][c]) !== color)
+              if (canMove(r, c, kPos.r, kPos.c, board[r][c], true)) return true;
+        return false;
+      }
+
+      function handleSquareClick(r, c) {
+        if (isOver || pendingPromotion) return;
+        if (!timerId) startTimer();
+
+        if (selected) {
+          let sR = selected.r,
+            sC = selected.c,
+            p = board[sR][sC];
+          if (canMove(sR, sC, r, c, p)) {
+            let target = board[r][c];
+            board[r][c] = p;
+            board[sR][sC] = "";
+            if (inCheck(turn)) {
+              board[sR][sC] = p;
+              board[r][c] = target;
+              alert("Check!");
+            } else {
+              if (target) {
+                turn === "blue" ? capBlue.push(target) : capRed.push(target);
+                updateGrave();
+              }
+              if ((p === "♙" && r === 0) || (p === "♟" && r === 7))
+                showPromo(r, c, turn);
+              else nextTurn();
+            }
+          }
+          selected = null;
+          render();
+        } else if (getTeam(board[r][c]) === turn) {
+          selected = { r, c };
+          render();
+          let sqs = document.querySelectorAll(".square");
+          sqs[r * 8 + c].classList.add("selected");
+          for (let i = 0; i < 64; i++)
+            if (canMove(r, c, Math.floor(i / 8), i % 8, board[r][c]))
+              sqs[i].classList.add("hint");
+        }
+      }
+
+      function showPromo(r, c, color) {
+        pendingPromotion = { r, c, color };
+        promoOverlay.style.display = "flex";
+        const pcs =
+          color === "blue" ? ["♕", "♖", "♗", "♘"] : ["♛", "♜", "♝", "♞"];
+        document.getElementById("promo-list").innerHTML = pcs
+          .map(
+            (p) => `<div class="promo-btn" onclick="doPromo('${p}')">${p}</div>`
+          )
+          .join("");
+      }
+
+      function doPromo(p) {
+        board[pendingPromotion.r][pendingPromotion.c] = p;
+        promoOverlay.style.display = "none";
+        pendingPromotion = null;
+        nextTurn();
+        render();
+      }
+
+      function nextTurn() {
+        turn = turn === "blue" ? "red" : "blue";
+        statusEl.innerText = turn.toUpperCase() + "'S TURN";
+      }
+
+      function startTimer() {
+        timerId = setInterval(() => {
+          if (turn === "blue") {
+            bTime--;
+            updateClock("blue", bTime);
+            if (bTime <= 0) end("RED ON TIME");
+          } else {
+            rTime--;
+            updateClock("red", rTime);
+            if (rTime <= 0) end("BLUE ON TIME");
+          }
+        }, 1000);
+      }
+
+      function updateClock(c, t) {
+        let m = Math.floor(t / 60),
+          s = t % 60;
+        document.getElementById(c + "-timer").innerText = `${m}:${
+          s < 10 ? "0" : ""
+        }${s}`;
+      }
+
+      function updateGrave() {
+        document.getElementById("cap-red").innerHTML = capRed
+          .map((p) => `<span class="blue-p">${p}</span>`)
+          .join("");
+        document.getElementById("cap-blue").innerHTML = capBlue
+          .map((p) => `<span class="red-p">${p}</span>`)
+          .join("");
+      }
+
+      function render() {
+        boardEl.innerHTML = "";
+        let check = inCheck(turn);
+        for (let r = 0; r < 8; r++)
+          for (let c = 0; c < 8; c++) {
+            let sq = document.createElement("div");
+            sq.className = `square ${(r + c) % 2 === 0 ? "white" : "black"}`;
+            let p = board[r][c];
+            sq.innerText = p;
+            if (p) sq.classList.add(getTeam(p) + "-p");
+            if (check && "♔♚".includes(p) && getTeam(p) === turn)
+              sq.classList.add("check-alert");
+            sq.onclick = () => handleSquareClick(r, c);
+            boardEl.appendChild(sq);
+          }
+        // Promotion overlay must stay inside boardEl or be separate.
+        // Re-adding it because boardEl.innerHTML = '' clears it.
+        boardEl.appendChild(promoOverlay);
+      }
+      render();
+    </script>
+  </body>
+</html>
